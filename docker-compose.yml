@@ -1,0 +1,40 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: idc-mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+
+  influxdb:
+    image: influxdb:2
+    container_name: idc-influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./influxdb:/var/lib/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=idcuser
+      - DOCKER_INFLUXDB_INIT_PASSWORD=idcpassword123
+      - DOCKER_INFLUXDB_INIT_ORG=idc
+      - DOCKER_INFLUXDB_INIT_BUCKET=environment
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=idc-token-123
+
+  telegraf:
+    image: telegraf:latest
+    container_name: idc-telegraf
+    depends_on:
+      - mosquitto
+      - influxdb
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: idc-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana:/var/lib/grafana
